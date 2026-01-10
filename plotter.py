@@ -4,10 +4,11 @@ from collections import deque
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets
 
-PORT = "/dev/ttyACM0"
+#PORT = "/dev/ttyACM0"
+PORT = "COM5"
 BAUDRATE = 115200
 
-serialPort = serial.Serial(PORT, BAUDRATE, timeout=0.1)
+serialPort = serial.Serial(PORT, BAUDRATE, timeout=0.01)
 
 app = QtWidgets.QApplication(sys.argv)
 win = pg.GraphicsLayoutWidget(title="Plotter")
@@ -18,19 +19,37 @@ plot.showGrid(x=True, y=True)
 
 data = deque(maxlen=2000)
 
-def update():
+def getData():
     try:
         line = serialPort.readline().decode("utf-8").rstrip()
         line = line.split(":")
-        if line[0]==">RollFused":
+
+        # if line[0]==">RollFused":
+        #     data.append(float(line[1]))
+
+        # if line[0]==">RollGyro":
+        #     data.append(float(line[1]))
+
+        # if line[0]==">RollAcc":
+        #     data.append(float(line[1]))
+
+        if line[0]==">Gyro":
             data.append(float(line[1]))
-            curve.setData(data)
+
+
     except ValueError:
         pass
 
-timer = pg.QtCore.QTimer()
-timer.timeout.connect(update)
-timer.start(10)
+def update():
+    curve.setData(data)
+
+dataTimer = pg.QtCore.QTimer()
+dataTimer.timeout.connect(getData)
+dataTimer.start(1)
+
+graphTimer = pg.QtCore.QTimer()
+graphTimer.timeout.connect(update)
+graphTimer.start(20)
 
 win.show()
 sys.exit(app.exec_())
