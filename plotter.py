@@ -4,8 +4,8 @@ from collections import deque
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets
 
-#PORT = "/dev/ttyACM0"
-PORT = "COM5"
+PORT = "/dev/ttyACM0"
+#PORT = "COM5"
 BAUDRATE = 115200
 
 serialPort = serial.Serial(PORT, BAUDRATE, timeout=0.01)
@@ -13,11 +13,17 @@ serialPort = serial.Serial(PORT, BAUDRATE, timeout=0.01)
 app = QtWidgets.QApplication(sys.argv)
 win = pg.GraphicsLayoutWidget(title="Plotter")
 plot = win.addPlot()
-curve = plot.plot(pen=pg.mkPen(width=2), symbol="o", symbolSize=6, symbolBrush="c")
+curve1 = plot.plot(pen=pg.mkPen(width=2), symbol="o", symbolSize=6, symbolBrush="c")
+curve2 = plot.plot(pen=pg.mkPen(width=2), symbol="o", symbolSize=6, symbolBrush="y")
+
+legend = plot.addLegend()
+legend.addItem(curve1, "Angle")
+legend.addItem(curve2, "Set Value")
 
 plot.showGrid(x=True, y=True)
 
-data = deque(maxlen=2000)
+data1 = deque(maxlen=300)
+data2 = deque(maxlen=300)
 
 def getData():
     while serialPort.in_waiting:
@@ -34,13 +40,17 @@ def getData():
             # if line[0]==">RollAcc":
             #     data.append(float(line[1]))
 
-            if line[0]==">Gyro":
-                data.append(float(line[1]))
+            if line[0]==">Angle":
+                data1.append(float(line[1]))
+
+            if line[0]==">Encoder":
+                data2.append(int(line[1]))
 
         except ValueError:
             pass
 
-    curve.setData(data)
+    curve1.setData(data1)
+    curve2.setData(data2)
     
 dataTimer = pg.QtCore.QTimer()
 dataTimer.timeout.connect(getData)
