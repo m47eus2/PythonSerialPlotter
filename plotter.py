@@ -1,4 +1,5 @@
 import serial
+import numpy as np
 import sys
 from collections import deque
 import pyqtgraph as pg
@@ -25,6 +26,8 @@ plot.showGrid(x=True, y=True)
 data1 = deque(maxlen=300)
 data2 = deque(maxlen=300)
 
+angle_log = []
+
 def getData():
     while serialPort.in_waiting:
         try:
@@ -41,7 +44,9 @@ def getData():
             #     data.append(float(line[1]))
 
             if line[0]==">Angle":
-                data1.append(float(line[1]))
+                angle = float(line[1])
+                angle_log.append(angle)
+                data1.append(angle)
 
             if line[0]==">Encoder":
                 data2.append(int(line[1]))
@@ -51,7 +56,14 @@ def getData():
 
     curve1.setData(data1)
     curve2.setData(data2)
-    
+
+def closeEvent(event):
+    np.save("angle_log.npy", np.array(angle_log))
+    serialPort.close()
+    event.accept()
+
+win.closeEvent = closeEvent
+
 dataTimer = pg.QtCore.QTimer()
 dataTimer.timeout.connect(getData)
 dataTimer.start(10)
